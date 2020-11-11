@@ -1,0 +1,107 @@
+version: '3.7'  
+services:
+  redis:
+    image: redis:alpine
+    container_name: Redis
+    ports:
+      - 6379:6379
+    environment:
+    - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - './redis:/redis/data'
+    networks:
+    - relc  
+
+  jenkins:
+    image: jenkins
+    restart: always
+    container_name: Jenkins
+    user: jenkins
+    volumes:
+      - './jenkins:/var/jenkins_home'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    environment:
+      JENKINS_HOST_HOME: "/data/jenkins"
+    ports:
+      - 8080:8080
+      - 5000:5000
+      - 50000:50000
+    networks:
+    - relc
+  
+  prometheus:
+    image: prom/prometheus
+    container_name: Prometheus
+    restart: always
+    container_name: prometheus
+    volumes:
+      - './prometheus/prometheus.yml:/etc/prometheus/prometheus.yml'
+      - './prometheus/alert.rules:/etc/prometheus/alert.rules'
+    ports:
+      - 9090:9090
+    networks:
+      - relc
+
+  grafana:
+    image: grafana/grafana
+    container_name: Grafana
+    restart: always
+    container_name: grafana
+    volumes:
+      -  './data/grafana/data:/var/lib/grafana'
+    ports:
+      - 3001:3000
+    networks:
+      - relc
+    depends_on:
+      - prometheus
+
+  alertmanager:
+    image: prom/alertmanager
+    container_name: AlertManager
+    restart: always
+    container_name: alertmanager
+    volumes:
+      - './prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml'
+    ports:
+      - 9093:9093
+    networks:
+      - relc
+
+  sonarqube:
+    image: sonarqube:8.2-community
+    container_name: SonarQube
+    depends_on:
+      - db
+    ports:
+      - 9001:9000
+    networks:
+      - relc
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://db:5432/sonar
+      SONAR_JDBC_USERNAME: postgres
+      SONAR_JDBC_PASSWORD: Erx458203@
+    volumes:
+      - './sonarqube/data:/opt/sonarqube/data'
+      - './sonarqube/extensions:/opt/sonarqube/extensions'
+      - './sonarqube/logs:/opt/sonarqube/logs'
+      - './sonarqube/temp:/opt/sonarqube/temp'
+  db:
+    image: postgres:alpine
+    container_name: Postgres
+    networks:
+      - relc
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Erx458203@
+    ports:
+      - 5432:5432
+    volumes:
+      - './postgresql:/var/lib/postgresql'     
+      - './postgresql/data:/var/lib/postgresql/data'
+
+networks:
+  relc:
+    driver: bridge
+
+    

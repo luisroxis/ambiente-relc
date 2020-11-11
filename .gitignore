@@ -1,0 +1,6 @@
+/data
+/jenkins
+/postgresql
+/redis
+/sonarqube
+/prometheus/alert.rules
